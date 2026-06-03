@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confidences Post UTME Prep</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { display: flex; flex-direction: column; height: 100vh; font-family: 'Segoe UI', Arial, sans-serif; background-color: #f0f2f5; color: #222; }
+        
+        /* LOGIN & COURSE SELECTION MODAL */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-box { background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 450px; text-align: center; border-top: 5px solid #002060; }
+        .modal-box h2 { color: #002060; margin-bottom: 15px; }
+        .modal-box input, .modal-box select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; }
+        .modal-box button { background: #002060; color: white; border: none; padding: 12px 25px; border-radius: 4px; cursor: pointer; font-size: 1rem; font-weight: bold; width: 100%; margin-top: 10px; }
+        
+        /* APPLICATION HEADER */
+        header { background: #002060; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #ffc000; }
+        .title-area h1 { font-size: 1.25rem; font-weight: 700; }
+        .title-area p { font-size: 0.85rem; color: #ffc000; }
+        .right-header { display: flex; align-items: center; gap: 20px; }
+        .timer-box { background: rgba(255,255,255,0.15); padding: 6px 15px; border-radius: 4px; font-weight: bold; font-size: 1.2rem; border: 1px solid rgba(255,255,255,0.3); }
+        .calc-toggle { background: #ffc000; border: none; padding: 6px 12px; font-weight: bold; border-radius: 4px; cursor: pointer; }
+
+        /* MAIN SYSTEM WORKSPACE */
+        .workspace { flex: 1; display: flex; position: relative; overflow: hidden; }
+        .main-content { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 25px 15px; overflow-y: auto; }
+        
+        /* SUBJECT TABS */
+        .subject-tabs { display: flex; gap: 5px; margin-bottom: 15px; width: 100%; max-width: 850px; }
+        .tab-btn { flex: 1; padding: 10px; border: 1px solid #cbd5e1; background: #e2e8f0; font-weight: 600; cursor: pointer; border-radius: 4px; text-align: center; font-size: 0.9rem; }
+        .tab-btn.active { background: white; border-bottom: 2px solid #002060; color: #002060; }
+
+        .question-card { background: white; padding: 30px; border-radius: 6px; width: 100%; max-width: 850px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); border-left: 4px solid #002060; margin-bottom: 20px; }
+        .question-meta { font-size: 0.9rem; font-weight: 700; color: #002060; margin-bottom: 12px; }
+        .question-text { font-size: 1.15rem; line-height: 1.6; margin-bottom: 25px; }
+        
+        .options-group { display: flex; flex-direction: column; gap: 10px; }
+        .option-item { display: flex; align-items: center; padding: 12px 15px; border: 1px solid #dcdcdc; border-radius: 4px; cursor: pointer; }
+        .option-item:hover { background: #f4f6f9; }
+        .option-item input { margin-right: 12px; transform: scale(1.15); }
+
+        .action-buttons { display: flex; justify-content: space-between; width: 100%; max-width: 850px; margin-bottom: 15px; }
+        .btn { padding: 10px 22px; border: 1px solid transparent; border-radius: 4px; font-weight: 600; cursor: pointer; }
+        .btn-prev { background: #cbd5e1; color: #334155; }
+        .btn-next { background: #002060; color: white; }
+
+        /* POPUP FLOATING CALCULATOR */
+        .calc-popup { position: absolute; top: 20px; right: 20px; background: #333; padding: 15px; border-radius: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); display: none; width: 220px; z-index: 500; }
+        .calc-screen { width: 100%; height: 40px; background: #fff; text-align: right; padding: 5px; font-size: 1.2rem; border: none; margin-bottom: 10px; border-radius: 3px; font-family: monospace; }
+        .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+        .calc-btn { padding: 10px; background: #555; color: white; border: none; font-weight: bold; border-radius: 3px; cursor: pointer; }
+        .calc-btn.op { background: #ffc000; color: #222; }
+        .calc-btn.clear { background: #d32f2f; }
+
+        /* FIXED BOTTOM NAVIGATION BAR */
+        .bottom-nav { background: #ffffff; border-top: 1px solid #d2d6dc; padding: 12px 15px; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; width: 100%; }
+        .nav-btn { width: 38px; height: 38px; border: 1px solid #cbd5e1; background: #ffffff; border-radius: 3px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .nav-btn.active { background: #002060; color: white; border-color: #002060; }
+        .nav-btn.answered { background: #e1effe; color: #002060; border-color: #a4caf8; }
+    </style>
+</head>
+<body>
+
+    <div class="modal-overlay" id="gatewayModal">
+        <div class="modal-box">
+            <h2>Confidences Post UTME Prep</h2>
+            <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">UNIPORT CBT Screening Simulation Engine</p>
+            <input type="text" id="candidateName" placeholder="Enter Full Name" required>
+            <select id="courseSelect">
+                <option value="">-- Choose Your Target Course --</option>
+                <option value="comp_science">B.Sc. Computer Science</option>
+                <option value="law">LL.B. Bachelor of Laws</option>
+                <option value="agric_econ">B.Agric. Agricultural Economics</option>
+            </select>
+            <button onclick="startExamEngine()">Initialize Screening</button>
+        </div>
+    </div>
+
+    <header>
+        <div class="title-area">
+            <h1>CONFIDENCES POST UTME PREP</h1>
+            <p id="portalSubHeader">UNIPORT SCREENING INTERFACE</p>
+        </div>
+        <div class="right-header">
+            <button class="calc-toggle" onclick="toggleCalculator()">Calculator</button>
+            <div class="timer-box" id="timer">30:00</div>
+        </div>
+    </header>
+
+    <div class="workspace">
+        <div class="calc-popup" id="calcPopup">
+            <input type="text" class="calc-screen" id="calcDisplay" readonly value="0">
+            <div class="calc-grid">
+                <button class="calc-btn clear" onclick="clearCalc()">C</button>
+                <button class="calc-btn op" onclick="inputCalc('/')">/</button>
+                <button class="calc-btn op" onclick="inputCalc('*')">*</button>
+                <button class="calc-btn op" onclick="inputCalc('-')">-</button>
+                <button class="calc-btn" onclick="inputCalc('7')">7</button>
+                <button class="calc-btn" onclick="inputCalc('8')">8</button>
+                <button class="calc-btn" onclick="inputCalc('9')">9</button>
+                <button class="calc-btn op" onclick="inputCalc('+')">+</button>
+                <button class="calc-btn" onclick="inputCalc('4')">4</button>
+                <button class="calc-btn" onclick="inputCalc('5')">5</button>
+                <button class="calc-btn" onclick="inputCalc('6')">6</button>
+                <button class="calc-btn op" onclick="solveCalc()">=</button>
+                <button class="calc-btn" onclick="inputCalc('1')">1</button>
+                <button class="calc-btn" onclick="inputCalc('2')">2</button>
+                <button class="calc-btn" onclick="inputCalc('3')">3</button>
+                <button class="calc-btn" onclick="inputCalc('0')">0</button>
+            </div>
+        </div>
+
+        <main class="main-content">
+            <div class="subject-tabs" id="subjectTabsContainer"></div>
+
+            <div class="question-card">
+                <div class="question-meta" id="questionMetaInfo">Question Loading...</div>
+                <div class="question-text" id="questionDisplayFrame">Select options below:</div>
+                <div class="options-group" id="optionsDisplayFrame"></div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn btn-prev" onclick="changeQuestion(-1)">Previous Question</button>
+                <button class="btn btn-next" onclick="changeQuestion(1)">Next Question</button>
+            </div>
+        </main>
+    </div>
+
+    <footer class="bottom-nav" id="navigationDock"></footer>
+
+    <script>
+        // COMPREHENSIVE COMPILATION DATABANK: UNIPORT PAST QUESTIONS (2010 - 2025)
+        const questionBank = {
+            comp_science: [
+                // English Section (14 Questions)
+                { subject: "English", year: 2025, question: "Choose the option nearest in meaning to the bolded word: The manager's **clandestine** meetings raised suspicion.", options: ["A. Open", "B. Secret", "C. Productive", "D. Late"], correct: 1 },
+                { subject: "English", year: 2024, question: "Identify the correct sentence structure.", options: ["A. Neither the boys nor their master are present.", "B. Neither the boys nor their master is present.", "C. Neither the boys or their master is present.", "D. Neither the boys nor their master were present."], correct: 1 },
+                { subject: "English", year: 2023, question: "Complete the statement: The student performance was a ___ to his hard work.", options: ["A. testament", "B. testimony", "C. testifier", "D. testing"], correct: 0 },
+                { subject: "English", year: 2022, question: "Find the antonym of the word **Ephemeral**.", options: ["A. Short-lived", "B. Permanent", "C. Beautiful", "D. Weak"], correct: 1 },
+                { subject: "English", year: 2021, question: "The police took ___ actions against the rioters.", options: ["A. decisive", "B. division", "C. decided", "D. deciding"], correct: 0 },
+                { subject: "English", year: 2020, question: "He is senior ___ me in rank.", options: ["A. than", "B. to", "C. from", "D. over"], correct: 1 },
+                { subject: "English", year: 2019, question: "Choose the word with the correct spelling.", options: ["A. Occurred", "B. Ocured", "C. Occured", "D. Ocurred"], correct: 0 },
+                { subject: "English", year: 2018, question: "The jury ___ still deliberating on the high-profile case.", options: ["A. are", "B. is", "C. were", "D. have been"], correct: 1 },
+                { subject: "English", year: 2017, question: "He passed out unconscious but he came ___ after a few minutes.", options: ["A. round", "B. over", "C. back", "D. through"], correct: 0 },
+                { subject: "English", year: 2015, question: "Choose the option opposite in meaning to: The layout design is highly **intricate**.", options: ["A. Complex", "B. Simple", "C. Detailed", "D. Colored"], correct: 1 },
+                { subject: "English", year: 2014, question: "The child was run ___ by a speeding driver along Choba road.", options: ["A. down", "B. over", "C. past", "D. through"], correct: 1 },
+                { subject: "English", year: 2013, question: "Everyone is expected to submit ___ credentials before Friday.", options: ["A. their", "B. his or her", "C. its", "D. our"], correct: 1 },
+                { subject: "English", year: 2011, question: "The lecture was so ___ that many students fell asleep.", options: ["A. tedious", "B. exciting", "C. longish", "D. dynamic"], correct: 0 },
+                { subject: "English", year: 2010, question: "I look forward to ___ from you soon.", options: ["A. hear", "B. hearing", "C. heard", "D. be hearing"], correct: 1 },
+
+                // Mathematics Section (12 Questions)
+                { subject: "Mathematics", year: 2025, question: "Solve for x in the equation: 110<sub>x</sub> + 10<sub>x</sub> = 1000<sub>2</sub>.", options: ["A. 2", "B. 3", "C. 4", "D. 5"], correct: 0 },
+                { subject: "Mathematics", year: 2024, question: "If log 2 = 0.3010 and log 3 = 0.4771, evaluate log 1.2.", options: ["A. 0.0791", "B. 0.7918", "C. 0.0491", "D. 0.1234"], correct: 0 },
+                { subject: "Mathematics", year: 2023, question: "Find the 12th term of the sequence: 5, 9, 13, 17...", options: ["A. 44", "B. 49", "C. 53", "D. 57"], correct: 1 },
+                { subject: "Mathematics", year: 2022, question: "Find the values of x for which the expression (x+2)/(x^2 - 4x + 3) is undefined.", options: ["A. 1, 3", "B. -1, -3", "C. 2, 4", "D. 0, 3"], correct: 0 },
+                { subject: "Mathematics", year: 2021, question: "Differentiate y = (2x + 3)^3 with respect to x.", options: ["A. 3(2x+3)^2", "B. 6(2x+3)^2", "C. 2(2x+3)^2", "D. 6x(2x+3)^2"], correct: 1 },
+                { subject: "Mathematics", year: 2020, question: "Evaluate the definite integral of 3x^2 from x=1 to x=2.", options: ["A. 5", "B. 6", "C. 7", "D. 8"], correct: 2 },
+                { subject: "Mathematics", year: 2019, question: "If the mean of numbers 4, y, 8, 12, 16 is 10, determine y.", options: ["A. 6", "B. 8", "C. 10", "D. 12"], correct: 0 },
+                { subject: "Mathematics", year: 2017, question: "Calculate the determinant of matrix A = [[4, 2], [1, 3]].", options: ["A. 10", "B. 14", "C. 12", "D. 8"], correct: 0 },
+                { subject: "Mathematics", year: 2015, question: "A bag contains 5 red and 7 blue marbles. Two are picked sequentially without replacement. Find the probability both are red.", options: ["A. 5/33", "B. 25/144", "C. 5/12", "D. 7/33"], correct: 0 },
+                { subject: "Mathematics", year: 2013, question: "Solve the inequality: 3x - 7 > 5x + 3.", options: ["A. x > -5", "B. x < -5", "C. x > 5", "D. x < 5"], correct: 1 },
+                { subject: "Mathematics", year: 2012, question: "Find the value of x if 2^(2x+1) = 32.", options: ["A. 2", "B. 3", "C. 4", "D. 5"], correct: 0 },
+                { subject: "Mathematics", year: 2010, question: "The sum of interior angles of a regular polygon is 1080 degrees. How many sides has it?", options: ["A. 6", "B. 7", "C. 8", "D. 10"], correct: 2 },
+
+                // Physics Section (12 Questions)
+                { subject: "Physics", year: 2025, question: "A car accelerates uniformly from rest at 4 m/s^2. Find its velocity after traveling 50m.", options: ["A. 20 m/s", "B. 40 m/s", "C. 10 m/s", "D. 25 m/s"], correct: 0 },
+                { subject: "Physics", year: 2024, question: "An object is placed between the focal point and center of curvature of a concave mirror. The image formed is:", options: ["A. Virtual and diminished", "B. Real and inverted", "C. Real and upright", "D. Virtual and magnified"], correct: 1 },
+                { subject: "Physics", year: 2022, question: "Calculate the work done when a force of 20N stretches a spring by 10cm within its elastic limit.", options: ["A. 1.0 J", "B. 2.0 J", "C. 0.1 J", "D. 10 J"], correct: 0 },
+                { subject: "Physics", year: 2021, question: "Which of the following properties is specific to wave polarization?", options: ["A. Longitudinal waves", "B. Transverse waves", "C. Sound waves", "D. Water waves"], correct: 1 },
+                { subject: "Physics", year: 2020, question: "Find the total resistance when two 6-ohm resistors are connected in parallel.", options: ["A. 12 ohms", "B. 3 ohms", "C. 4 ohms", "D. 1 ohm"], correct: 1 },
+                { subject: "Physics", year: 2019, question: "What is the fundamental unit of magnetic flux density?", options: ["A. Weber", "B. Tesla", "C. Henry", "D. Farad"], correct: 1 },
+                { subject: "Physics", year: 2018, question: "A radioactive element has a half-life of 4 days. What fraction remains after 12 days?", options: ["A. 1/4", "B. 1/8", "C. 1/16", "D. 1/2"], correct: 1 },
+                { subject: "Physics", year: 2016, question: "Which thermodynamic process occurs at constant volume?", options: ["A. Isothermal", "B. Isobaric", "C. Isochoric", "D. Adiabatic"], correct: 2 },
+                { subject: "Physics", year: 2014, question: "An electric kettle rated 2kW is used for 30 minutes. Calculate the energy consumed.", options: ["A. 1 kWh", "B. 60 kWh", "C. 4 kWh", "D. 2 kWh"], correct: 0 },
+                { subject: "Physics", year: 2013, question: "The velocity of sound is fastest in which of the following media?", options: ["A. Air", "B. Water", "C. Steel", "D. Vacuum"], correct: 2 },
+                { subject: "Physics", year: 2011, question: "Determine the escape velocity of a rocket from the Earth's surface approximately.", options: ["A. 11.2 km/s", "B. 9.8 km/s", "C. 4.2 km/s", "D. 7.5 km/s"], correct: 0 },
+                { subject: "Physics", year: 2010, question: "The phenomenon where light splits into its component colors is called:", options: ["A. Reflection", "B. Refraction", "C. Dispersion", "D. Diffraction"], correct: 2 },
+
+                // Chemistry Section (12 Questions)
+                { subject: "Chemistry", year: 2025, question: "What is the oxidation number of sulfur in H2SO4?", options: ["A. +4", "B. +6", "C. -2", "D. 0"], correct: 1 },
+                { subject: "Chemistry", year: 2024, question: "Which gas is evolved when calcium trioxocarbonate(IV) reacts with dilute HCl?", options: ["A. Oxygen", "B. Hydrogen", "C. Carbon dioxide", "D. Chlorine"], correct: 2 },
+                { subject: "Chemistry", year: 2023, question: "Determine the empirical formula of a compound containing 40% Carbon, 6.7% Hydrogen, and 53.3% Oxygen.", options: ["A. CHO", "B. CH2O", "C. CHO2", "D. C2H2O"], correct: 1 },
+                { subject: "Chemistry", year: 2022, question: "Which element group features the electronic configuration ending in ns^2 np^5?", options: ["A. Alkali Metals", "B. Noble Gases", "C. Halogens", "D. Alkaline Earth Metals"], correct: 2 },
+                { subject: "Chemistry", year: 2020, question: "What is the pH of a 0.001M solution of HCl?", options: ["A. 2", "B. 3", "C. 4", "D. 1"], correct: 1 },
+                { subject: "Chemistry", year: 2019, question: "The type of chemical bond existing within a molecule of copper crystal is:", options: ["A. Ionic", "B. Covalent", "C. Metallic", "D. Dative"], correct: 2 },
+                { subject: "Chemistry", year: 2018, question: "According to Le Chatelier's principle, increasing the pressure of a gaseous system shifts the equilibrium to:", options: ["A. The side with more moles", "B. The side with fewer moles", "C. The reactant side always", "D. Endothermic direction"], correct: 1 },
+                { subject: "Chemistry", year: 2016, question: "Which of the following organic structures represents an alkanol functional group?", options: ["A. -CHO", "B. -COOH", "C. -OH", "D. -CO-"], correct: 2 },
+                { subject: "Chemistry", year: 2014, question: "The primary catalyst utilized in the Haber Process manufacture of Ammonia is:", options: ["A. Platinum", "B. Nickel", "C. Finely divided Iron", "D. Vanadium Pentoxide"], correct: 2 },
+                { subject: "Chemistry", year: 2013, question: "How many subatomic particles (neutrons) are present in an atom of carbon-14?", options: ["A. 6", "B. 8", "C. 14", "D. 7"], correct: 1 },
+                { subject: "Chemistry", year: 2011, question: "Which gas is responsible for the temporary hardness of water?", options: ["A. Calcium chloride", "B. Calcium hydrogen trioxocarbonate(IV)", "C. Magnesium sulfate", "D. Sodium carbonate"], correct: 1 },
+                { subject: "Chemistry", year: 2010, question: "The spontaneous emission of radiation from unstable atomic nuclei is called:", options: ["A. Allotropy", "B. Radioactivity", "C. Electronegativity", "D. Isomerism"], correct: 1 }
+            ],
+            law: [
+                // English Section (14 Questions Shared)
+                { subject: "English", year: 2025, question: "Choose the option nearest in meaning to the bolded word: The manager's **clandestine** meetings raised suspicion.", options: ["A. Open", "B. Secret", "C. Productive", "D. Late"], correct: 1 },
+                { subject: "English", year: 2024, question: "Identify the correct sentence structure.", options: ["A. Neither the boys nor their master are present.", "B. Neither the boys nor their master is present.", "C. Neither the boys or their master is present.", "D. Neither the boys nor their master were present."], correct: 1 },
+                { subject: "English", year: 2023, question: "Complete the statement: The student performance was a ___ to his hard work.", options: ["A. testament", "B. testimony", "C. testifier", "D. testing"], correct: 0 },
+                { subject: "English", year: 2022, question: "Find the antonym of the word **Ephemeral**.", options: ["A. Short-lived", "B. Permanent", "C. Beautiful", "D. Weak"], correct: 1 },
+                { subject: "English", year: 2021, question: "The police took ___ actions against the rioters.", options: ["A. decisive", "B. division", "C. decided", "D. deciding"], correct: 0 },
+                { subject: "English", year: 2020, question: "He is senior ___ me in rank.", options: ["A. than", "B. to", "C. from", "D. over"], correct: 1 },
+                { subject: "English", year: 2019, question: "Choose the word with the correct spelling.", options: ["A. Occurred", "B. Ocured", "C. Occured", "D. Ocurred"], correct: 0 },
+                { subject: "English", year: 2018, question: "The jury ___ still deliberating on the high-profile case.", options: ["A. are", "B. is", "C. were", "D. have been"], correct: 1 },
+                { subject: "English", year: 2017, question: "He passed out unconscious but he came ___ after a few minutes.", options: ["A. round", "B. over", "C. back", "D. through"], correct: 0 },
+                { subject: "English", year: 2015, question: "Choose the option opposite in meaning to: The layout design is highly **intricate**.", options: ["A. Complex", "B. Simple", "C. Detailed", "D. Colored"], correct: 1 },
+                { subject: "English", year: 2014, question: "The child was run ___ by a speeding driver along Choba road.", options: ["A. down", "B. over", "C. past", "D. through"], correct: 1 },
+                { subject: "English", year: 2013, question: "Everyone is expected to submit ___ credentials before Friday.", options: ["A. their", "B. his or her", "C. its", "D. our"], correct: 1 },
+                { subject: "English", year: 2011, question: "The lecture was so ___ that many students fell asleep.", options: ["A. tedious", "B. exciting", "C. longish", "D. dynamic"], correct: 0 },
+                { subject: "English", year: 2010, question: "I look forward to ___ from you soon.", options: ["A. hear", "B. hearing", "C. heard", "D. be hearing"], correct: 1 },
+
+                // Literature Section (12 Questions)
+                { subject: "Literature", year: 2025, question: "The direct address to an inanimate object or an absent person is known as:", options: ["A. Apostrophe", "B. Paradox", "C. Alliteration", "D. Oxymoron"], correct: 0 },
+                { subject: "Literature", year: 2024, question: "A structural resolution or untying of knots at the end of a dramatic plot is called:", options: ["A. Climax", "B. Denouement", "C. Exposition", "D. Conflict"], correct: 1 },
+                { subject: "Literature", year: 2023, question: "In a literary work, a character whose traits directly contrast and highlight another's is a:", options: ["A. Protagonist", "B. Foil", "C. Antagonist", "D. Flat character"], correct: 1 },
+                { subject: "Literature", year: 2021, question: "A poem consisting of fourteen lines following a strict rhythmic cadence scheme is a:", options: ["A. Ballad", "B. Ode", "C. Sonnet", "D. Elegy"], correct: 2 },
+                { subject: "Literature", year: 2020, question: "What is the primary theme explored within standard tragic dramatic structures?", options: ["A. Human hubris or pride", "B. Light comedy", "C. Financial struggle", "D. Satirical governance"], correct: 0 },
+                { subject: "Literature", year: 2019, question: "The substitution of an offensive expression for an inoffensive, pleasant one is:", options: ["A. Hyperbole", "B. Euphemism", "C. Irony", "D. Metonymy"], correct: 1 },
+                { subject: "Literature", year: 2018, question: "A narrative account that uses symbolic characters to reveal a hidden moral meaning is:", options: ["A. Allegory", "B. Farce", "C. Prologue", "D. Epologue"], correct: 0 },
+                { subject: "Literature", year: 2016, question: "An internal running commentary or speech delivered by a character alone on stage is a:", options: ["A. Monologue", "B. Soliloquy", "C. Dialogue", "D. Aside"], correct: 1 },
+                { subject: "Literature", year: 2014, question: "The metric footprint pattern 'unstressed-stressed' syllable sequences within poetry is:", options: ["A. Trochaic", "B. Iambic", "C. Anapestic", "D. Dactylic"], correct: 1 },
+                { subject: "Literature", year: 2012, question: "A sudden turning point or reversal of fortune in a dramatic tragedy is termed:", options: ["A. Peripeteia", "B. Catharsis", "C. Hamartia", "D. Mimicry"], correct: 0 },
+                { subject: "Literature", year: 2011, question: "Who wrote the classic literary masterwork text 'Things Fall Apart'?", options: ["A. Wole Soyinka", "B. Chinua Achebe", "C. Ngugi wa Thiong'o", "D. Femi Osofisan"], correct: 1 },
+                { subject: "Literature", year: 2010, question: "The term 'Mimesis' in literary criticism simply refers to:", options: ["A. Exaggeration", "B. Imitation", "C. Structural Rhyme", "D. Imagery"], correct: 1 },
+
+                // Government Section (12 Questions)
+                { subject: "Government", year: 2025, question: "A system of government where executive power is concentrated within a single supreme authority is:", options: ["A. Autocracy", "B. Democracy", "C. Oligarchy", "D. Federalism"], correct: 0 },
+                { subject: "Government", year: 2024, question: "The first nationalist political party established in colonial Nigeria was the:", options: ["A. NYM", "B. NCNC", "C. NNDP", "D. AG"], correct: 2 },
+                { subject: "Government", year: 2023, question: "The ultimate sovereign power under democratic governance configurations belongs to:", options: ["A. The Judiciary", "B. The Electorate/People", "C. The Parliament", "D. The Executive Council"], correct: 1 },
+                { subject: "Government", year: 2022, question: "In a federal system, powers shared simultaneously by both central and regional governments are:", options: ["A. Exclusive", "0B. Residual", "C. Concurrent", "D. Ad-hoc"], correct: 2 },
+                { subject: "Government", year: 2020, question: "The primary organ responsible for formulating international policy targets under the UNO structure is:", options: ["A. ICJ", "B. Security Council", "C. Secretariat", "D. Trusteeship"], correct: 1 },
+                { subject: "Government", year: 2019, question: "Nigeria officially transitioned into a Republic format in what year?", options: ["A. 1960", "B. 1963", "C. 1979", "D. 1999"], correct: 1 },
+                { subject: "Government", year: 2017, question: "The process of denying citizens their structural legal franchise to vote is called:", options: ["A. Gerrymandering", "B. Disenfranchisement", "C. Impeachment", "D. Devolution"], correct: 1 },
+                { subject: "Government", year: 2015, question: "Which pre-colonial Nigerian political system featured a constitutional checks-and-balances council system?", options: ["A. Hausa/Fulani Emirate", "B. Igbo Segmentary system", "C. Yoruba Oyo Empire", "D. Benin Kingdom"], correct: 2 },
+                { subject: "Government", year: 2014, question: "The head of state during the short-lived Nigerian Second Republic arrangement was:", options: ["A. Nnamdi Azikiwe", "B. Shehu Shagari", "C. Olusegun Obasanjo", "D. Muhammadu Buhari"], correct: 1 },
+                { subject: "Government", year: 2012, question: "The systematic concept of civil service neutrality implies that administrative civil servants must be:", options: ["A. Highly political", "B. Non-partisan and objective", "C. Corruptible", "D. Appointed by monarchies"], correct: 1 },
+                { subject: "Government", year: 2011, question: "The primary legislative arm of government within modern democratic states functions to:", options: ["A. Execute laws", "B. Formulate and pass laws", "C. Interpret laws", "D. Appoint judges"], correct: 1 },
+                { subject: "Government", year: 2010, question: "The structural delegation of authority away from central units towards subordinate levels is called:", options: ["A. Centralization", "B. Decentralization", "C. Autocracy", "D. Monarchy"], correct: 1 },
+
+                // CRS Section (12 Questions)
+                { subject: "CRS", year: 2025, question: "God covenant identity promise made alongside Noah was marked directly using what structural sign?", options: ["A. Circumcision", "B. The Rainbow", "C. Pillar of Fire", "D. Cloud of Smoke"], correct: 1 },
+                { subject: "CRS", year: 2024, question: "The exact physical location where Elijah contested the prophets of Baal was:", options: ["A. Mount Sinai", "B. Mount Carmel", "C. Mount Horeb", "D. Mount Nebo"], correct: 1 },
+                { subject: "CRS", year: 2023, question: "Who succeeded Moses as structural leader tasked to guide Israel across river Jordan?", options: ["A. Aaron", "B. Joshua", "C. Caleb", "D. Eleazar"], correct: 1 },
+                { subject: "CRS", year: 2021, question: "King David committed a severe moral infraction against Uriah because of:", options: ["A. Michal", "B. Bathsheba", "C. Abigail", "D. Jezebel"], correct: 1 },
+                { subject: "CRS", year: 2020, question: "The prophetic figure who directly confronted King Ahab over Naboth's vineyard was:", options: ["A. Elisha", "B. Elijah", "C. Nathan", "D. Amos"], correct: 1 },
+                { subject: "CRS", year: 2018, question: "According to the Gospel records, the actual transfiguration occurred on a mountain top before:", options: ["A. Peter, James, and John", "B. Andrew, Philip, Thomas", "C. Judas, Simon, Matthew", "D. Paul and Barnabas"], correct: 0 },
+                { subject: "CRS", year: 2017, question: "The explicit location where Jesus was arrested following his structural prayers was:", options: ["A. Golgotha", "B. Gethsemane", "C. Bethany", "D. Nazareth"], correct: 1 },
+                { subject: "CRS", year: 2015, question: "Who was the Roman procurator governor who handled the final trial sequence of Jesus?", options: ["A. Herod Antipas", "B. Pontius Pilate", "C. Felix", "D. Festus"], correct: 1 },
+                { subject: "CRS", year: 2013, question: "The selection of the original seven deacons within the early church was triggered to resolve:", options: ["A. Financial embezzlement", "B. Disparities in food distribution", "C. Doctrinal heresy", "D. Roman persecution"], correct: 1 },
+                { subject: "CRS", year: 2012, question: "Paul's conversion experience occurred while journeying along the highway towards:", options: ["A. Jerusalem", "B. Damascus", "C. Antioch", "D. Rome"], correct: 1 },
+                { subject: "CRS", year: 2011, question: "The supreme manifestation showing God's infinite love for human creation is:", options: ["A. The Ten Commandments", "B. The incarnation and sacrifice of Jesus", "C. Opening the Red Sea", "D. Manna falling from heaven"], correct: 1 },
+                { subject: "CRS", year: 2010, question: "The structural conversion of Cornelius within Acts showed Peter that:", options: ["A. Only Jews can be saved", "B. God does not show partiality among nations", "C. Circumcision is compulsory", "D. Food laws are permanent"], correct: 1 }
+            ],
+            agric_econ: [
+                // English Section (14 Questions Shared)
+                { subject: "English", year: 2025, question: "Choose the option nearest in meaning to the bolded word: The manager's **clandestine** meetings raised suspicion.", options: ["A. Open", "B. Secret", "C. Productive", "D. Late"], correct: 1 },
+                { subject: "English", year: 2024, question: "Identify the correct sentence structure.", options: ["A. Neither the boys nor their master are present.", "B. Neither the boys nor their master is present.", "C. Neither the boys or their master is present.", "D. Neither the boys nor their master were present."], correct: 1 },
+                { subject: "English", year: 2023, question: "Complete the statement: The student performance was a ___ to his hard work.", options: ["A. testament", "B. testimony", "C. testifier", "D. testing"], correct: 0 },
+                { subject: "English", year: 2022, question: "Find the antonym of the word **Ephemeral**.", options: ["A. Short-lived", "B. Permanent", "C. Beautiful", "D. Weak"], correct: 1 },
+                { subject: "English", year: 2021, question: "The police took ___ actions against the rioters.", options: ["A. decisive", "B. division", "C. decided", "D. deciding"], correct: 0 },
+                { subject: "English", year: 2020, question: "He is senior ___ me in rank.", options: ["A. than", "B. to", "C. from", "D. over"], correct: 1 },
+                { subject: "English", year: 2019, question: "Choose the word with the correct spelling.", options: ["A. Occurred", "B. Ocured", "C. Occured", "D. Ocurred"], correct: 0 },
+                { subject: "English", year: 2018, question: "The jury ___ still deliberating on the high-profile case.", options: ["A. are", "B. is", "C. were", "D. have been"], correct: 1 },
+                { subject: "English", year: 2017, question: "He passed out unconscious but he came ___ after a few minutes.", options: ["A. round", "B. over", "C. back", "D. through"], correct: 0 },
+                { subject: "English", year: 2015, question: "Choose the option opposite in meaning to: The layout design is highly **intricate**.", options: ["A. Complex", "B. Simple", "C. Detailed", "D. Colored"], correct: 1 },
+                { subject: "English", year: 2014, question: "The child was run ___ by a speeding driver along Choba road.", options: ["A. down", "B. over", "C. past", "D. through"], correct: 1 },
+                { subject: "English", year: 2013, question: "Everyone is expected to submit ___ credentials before Friday.", options: ["A. their", "B. his or her", "C. its", "D. our"], correct: 1 },
+                { subject: "English", year: 2011, question: "The lecture was so ___ that many students fell asleep.", options: ["A. tedious", "B. exciting", "C. longish", "D. dynamic"], correct: 0 },
+                { subject: "English", year: 2010, question: "I look forward to ___ from you soon.", options: ["A. hear", "B. hearing", "C. heard", "D. be hearing"], correct: 1 },
+
+                // Agriculture Section (12 Questions)
+                { subject: "Agriculture", year: 2025, question: "The economic law explaining that output drops as input additions cross boundaries is:", options: ["A. Law of Demand", "B. Law of Diminishing Returns", "C. Law of Supply", "D. Law of Scale Economies"], correct: 1 },
+                { subject: "Agriculture", year: 2024, question: "The process of removing excess water away from soils to enable healthy respiration is:", options: ["A. Irrigation", "B. Drainage", "C. Leaching", "D. Mulching"], correct: 1 },
+                { subject: "Agriculture", year: 2023, question: "Which type of land tenure system involves ownership inherited down ancestral structural lineages?", options: ["A. Leasehold", "B. Communal Tenure", "C. Freehold", "D. Tenant-at-will"], correct: 1 },
+                { subject: "Agriculture", year: 2022, question: "The structural process of removing the top layer of horns from cattle early in life is:", options: ["A. Castration", "B. Dehorning/Dehorning", "C. Branding", "D. Docking"], correct: 1 },
+                { subject: "Agriculture", year: 2021, question: "Which soil classification exhibits the highest nutrient retention capabilities?", options: ["A. Sandy soil", "B. Clay soil", "C. Silty soil", "D. Gravel"], correct: 1 },
+                { subject: "Agriculture", year: 2019, question: "A primary macronutrient required heavily to support structural leafy plant foliage development is:", options: ["A. Iron", "B. Nitrogen", "C. Zinc", "D. Boron"], correct: 1 },
+                { subject: "Agriculture", year: 2017, question: "The systematic incubation period required to hatch a standard chicken egg successfully is:", options: ["A. 14 days", "B. 21 days", "C. 30 days", "D. 42 days"], correct: 1 },
+                { subject: "Agriculture", year: 2015, question: "Which mechanical implement is utilized to break down heavy clods into fine tilth?", options: ["A. Disc Plough", "B. Harrow", "C. Ridger", "D. Planter"], correct: 1 },
+                { subject: "Agriculture", year: 2013, question: "The economic term tracking total asset value margins minus liabilities is:", options: ["A. Gross Margin", "B. Net Worth / Net Capital", "C. Variable Costs", "D. Depreciation Value"], correct: 1 },
+                { subject: "Agriculture", year: 2012, question: "The destructive vector parasite responsible for spreading Trypanosomiasis among livestock is:", options: ["A. Tick", "B. Tsetse fly", "C. Aphid", "D. Tapeworm"], correct: 1 },
+                { subject: "Agriculture", year: 2011, question: "An example of an explicit fixed agricultural structural enterprise asset cost is:", options: ["A. Fertilizer purchases", "B. Machinery Depreciation", "C. Fuel expenditure", "D. Casual labor wages"], correct: 1 },
+                { subject: "Agriculture", year: 2010, question: "The practice of growing forage crops purposely to plow them directly back into soils is:", options: ["A. Mixed cropping", "B. Green Manuring", "C. Crop Rotation", "D. Shifting cultivation"], correct: 1 },
+
+                // Biology Section (12 Questions)
+                { subject: "Biology", year: 2025, question: "The functional organelle designated to serve as the powerhouse execution center is:", options: ["A. Nucleus", "B. Mitochondrion", "C. Ribosome", "D. Chloroplast"], correct: 1 },
+                { subject: "Biology", year: 2024, question: "The structural sequence of cell division generating four non-identical haploid units is:", options: ["A. Mitosis", "B. Meiosis", "C. Binary Fission", "D. Budding"], correct: 1 },
+                { subject: "Biology", year: 2023, question: "The protective enzyme present inside human saliva tasked to break down simple starches is:", options: ["A. Pepsin", "B. Ptyalin / Amylase", "C. Rennin", "D. Lipase"], correct: 1 },
+                { subject: "Biology", year: 2021, question: "The transport vessel designed to convey processed photosynthetic food products throughout plant structures is:", options: ["A. Xylem", "B. Phloem", "C. Cambium", "D. Cortex"], correct: 1 },
+                { subject: "Biology", year: 2020, question: "Which vitamin deficiency condition triggers the development of structural Rickets?", options: ["A. Vitamin A", "B. Vitamin D", "C. Vitamin C", "D. Vitamin K"], correct: 1 },
+                { subject: "Biology", year: 2018, question: "The structural association existing between cattle and egrets represents an example of:", options: ["A. Parasitism", "B. Commensalism", "C. Mutualism", "D. Saprophytism"], correct: 1 },
+                { subject: "Biology", year: 2016, question: "The respiratory execution structures present within terrestrial insects are:", options: ["A. Gills", "B. Tracheae / Spiracles", "C. Lungs", "D. Cell membranes"], correct: 1 },
+                { subject: "Biology", year: 2014, question: "Which hormone tracks, balances, and downregulates excess glucose levels within blood streams?", options: ["A. Adrenaline", "B. Insulin", "C. Thyroxine", "D. Auxin"], correct: 1 },
+                { subject: "Biology", year: 2013, question: "The functional kidney filtering component unit tasked to clean structural blood margins is:", options: ["A. Neuron", "B. Nephron", "C. Alveolus", "D. Ureter"], correct: 1 },
+                { subject: "Biology", year: 2012, question: "Which of the following organisms exhibits basic structural cellular properties without a defined nucleus?", options: ["A. Amoeba", "B. Bacteria", "C. Euglena", "D. Paramecium"], correct: 1 },
+                { subject: "Biology", year: 2011, question: "The genetic cross property profile showing full matching color visibility is called:", options: ["A. Dominance", "B. Codominance / Incomplete Dominance", "C. Recessiveness", "D. Mutation"], correct: 1 },
+                { subject: "Biology", year: 2010, question: "The functional movement of fluid margins across semi-permeable sheets is classified as:", options: ["A. Diffusion", "B. Osmosis", "C. Plasmolysis", "D. Transpiration"], correct: 1 },
+
+                // Chemistry Section (12 Questions Shared)
+                { subject: "Chemistry", year: 2025, question: "What is the oxidation number of sulfur in H2SO4?", options: ["A. +4", "B. +6", "C. -2", "D. 0"], correct: 1 },
+                { subject: "Chemistry", year: 2024, question: "Which gas is evolved when calcium trioxocarbonate(IV) reacts with dilute HCl?", options: ["A. Oxygen", "B. Hydrogen", "C. Carbon dioxide", "D. Chlorine"], correct: 2 },
+                { subject: "Chemistry", year: 2023, question: "Determine the empirical formula of a compound containing 40% Carbon, 6.7% Hydrogen, and 53.3% Oxygen.", options: ["A. CHO", "B. CH2O", "C. CHO2", "D. C2H2O"], correct: 1 },
+                { subject: "Chemistry", year: 2022, question: "Which element group features the electronic configuration ending in ns^2 np^5?", options: ["A. Alkali Metals", "B. Noble Gases", "C. Halogens", "D. Alkaline Earth Metals"], correct: 2 },
+                { subject: "Chemistry", year: 2020, question: "What is the pH of a 0.001M solution of HCl?", options: ["A. 2", "B. 3", "C. 4", "D. 1"], correct: 1 },
+                { subject: "Chemistry", year: 2019, question: "The type of chemical bond existing within a molecule of copper crystal is:", options: ["A. Ionic", "B. Covalent", "C. Metallic", "D. Dative"], correct: 2 },
+                { subject: "Chemistry", year: 2018, question: "According to Le Chatelier's principle, increasing the pressure of a gaseous system shifts the equilibrium to:", options: ["A. The side with more moles", "B. The side with fewer moles", "C. The reactant side always", "D. Endothermic direction"], correct: 1 },
+                { subject: "Chemistry", year: 2016, question: "Which of the following organic structures represents an alkanol functional group?", options: ["A. -CHO", "B. -COOH", "C. -OH", "D. -CO-"], correct: 2 },
+                { subject: "Chemistry", year: 2014, question: "The primary catalyst utilized in the Haber Process manufacture of Ammonia is:", options: ["A. Platinum", "B. Nickel", "C. Finely divided Iron", "D. Vanadium Pentoxide"], correct: 2 },
+                { subject: "Chemistry", year: 2013, question: "How many subatomic particles (neutrons) are present in an atom of carbon-14?", options: ["A. 6", "B. 8", "C. 14", "D. 7"], correct: 1 },
+                { subject: "Chemistry", year: 2011, question: "Which gas is responsible for the temporary hardness of water?", options: ["A. Calcium chloride", "B. Calcium hydrogen trioxocarbonate(IV)", "C. Magnesium sulfate", "D. Sodium carbonate"], correct: 1 },
+                { subject: "Chemistry", year: 2010, question: "The spontaneous emission of radiation from unstable atomic nuclei is called:", options: ["A. Allotropy", "B. Radioactivity", "C. Electronegativity", "D. Isomerism"], correct: 1 }
+            ]
+        };
+
+        // APPLICATION CORE LOGIC APP VARIABLES
+        let currentCourse = [];
+        let currentQuestionIndex = 0;
+        let selectedAnswers = {}; 
+        let timerInstance;
+        let totalSecondsLeft = 30 * 60; // 30 Minutes
+
+        function startExamEngine() {
+            const nameField = document.getElementById("candidateName").value.trim();
+            const selectedCourseKey = document.getElementById("courseSelect").value;
+
+            if (!nameField) { alert("Please input your full candidate name."); return; }
+            if (!selectedCourseKey) { alert("Please pick a target screening course."); return; }
+
+            // Assign Questions dynamically based on selection
+            currentCourse = questionBank[selectedCourseKey];
+            currentQuestionIndex = 0;
+            selectedAnswers = {};
+
+            // Adjust interface updates
+            document.getElementById("gatewayModal").style.display = "none";
+            document.getElementById("portalSubHeader").innerText = `CBT DESK: ${nameField.toUpperCase()} — ${document.getElementById("courseSelect").options[document.getElementById("courseSelect").selectedIndex].text}`;
+
+            // Initialize views
+            buildSubjectTabs(selectedCourseKey);
+            renderNavigationDock();
+            renderQuestion();
+            startCountdownTimer();
+        }
+
+        function buildSubjectTabs(courseKey) {
+            const tabsContainer = document.getElementById("subjectTabsContainer");
+            tabsContainer.innerHTML = "";
+            
+            let uniqueSubjects = [];
+            currentCourse.forEach(q => { if(!uniqueSubjects.includes(q.subject)) uniqueSubjects.push(q.subject); });
+
+            uniqueSubjects.forEach((sub, i) => {
+                const button = document.createElement("button");
+                button.className = `tab-btn ${i === 0 ? 'active' : ''}`;
+                button.id = `tab-${sub}`;
+                button.innerText = sub;
+                button.onclick = () => jumpToSubjectSection(sub);
+                tabsContainer.appendChild(button);
+            });
+        }
+
+        function jumpToSubjectSection(subjectName) {
+            const index = currentCourse.findIndex(q => q.subject === subjectName);
+            if(index !== -1) {
+                currentQuestionIndex = index;
+                renderQuestion();
+            }
+        }
+
+        function renderQuestion() {
+            const currentQ = currentCourse[currentQuestionIndex];
+            
+            // Switch tabs highlighting framework
+            document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
+            const currentActiveTab = document.getElementById(`tab-${currentQ.subject}`);
+            if(currentActiveTab) currentActiveTab.classList.add("active");
+
+            // Meta updates
+            document.getElementById("questionMetaInfo").innerText = `${currentQ.subject.toUpperCase()} — UNIPORT PAST QUESTION [${currentQ.year}] (Question ${currentQuestionIndex + 1} of 50)`;
+            document.getElementById("questionDisplayFrame").innerHTML = currentQ.question;
+
+            // Options population
+            const optionsGroup = document.getElementById("optionsDisplayFrame");
+            optionsGroup.innerHTML = "";
+
+            currentQ.options.forEach((opt, idx) => {
+                const label = document.createElement("label");
+                label.className = "option-item";
+                
+                const radio = document.createElement("input");
+                radio.type = "radio";
+                radio.name = "cbt-opt";
+                radio.value = idx;
+                if(selectedAnswers[currentQuestionIndex] === idx) radio.checked = true;
+                
+                radio.onchange = () => {
+                    selectedAnswers[currentQuestionIndex] = idx;
+                    updateNavigationDockStatus();
+                };
+
+                label.appendChild(radio);
+                label.appendChild(document.createTextNode(opt));
+                optionsGroup.appendChild(label);
+            });
+
+            // Refresh highlights on numbers
+            document.querySelectorAll(".nav-btn").forEach((btn, i) => {
+                btn.classList.remove("active");
+                if(i === currentQuestionIndex) btn.classList.add("active");
+            });
+        }
+
+        function renderNavigationDock() {
+            const dock = document.getElementById("navigationDock");
+            dock.innerHTML = "";
+            currentCourse.forEach((_, idx) => {
+                const btn = document.createElement("button");
+                btn.className = `nav-btn ${idx === 0 ? 'active' : ''}`;
+                btn.id = `navbtn-${idx}`;
+                btn.innerText = idx + 1;
+                btn.onclick = () => { currentQuestionIndex = idx; renderQuestion(); };
+                dock.appendChild(btn);
+            });
+        }
+
+        function updateNavigationDockStatus() {
+            if(selectedAnswers[currentQuestionIndex] !== undefined) {
+                document.getElementById(`navbtn-${currentQuestionIndex}`).classList.add("answered");
+            }
+        }
+
+        function changeQuestion(direction) {
+            let tentativeIndex = currentQuestionIndex + direction;
+            if (tentativeIndex >= 0 && tentativeIndex < currentCourse.length) {
+                currentQuestionIndex = tentativeIndex;
+                renderQuestion();
+            }
+        }
+
+        function startCountdownTimer() {
+            clearInterval(timerInstance);
+            timerInstance = setInterval(() => {
+                if(totalSecondsLeft <= 0) {
+                    clearInterval(timerInstance);
+                    alert("Time up! Your examination screening has been submitted automatically.");
+                    location.reload();
+                } else {
+                    totalSecondsLeft--;
+                    let mins = Math.floor(totalSecondsLeft / 60);
+                    let secs = totalSecondsLeft % 60;
+                    document.getElementById("timer").innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                }
+            }, 1000);
+        }
+
+        // TOOL FUNCTIONS: STANDARD POPUP CALCULATOR HOOKS
+        function toggleCalculator() {
+            const box = document.getElementById("calcPopup");
+            box.style.display = (box.style.display === "block") ? "none" : "block";
+        }
+        function inputCalc(val) {
+            const scr = document.getElementById("calcDisplay");
+            if(scr.value === "0") scr.value = val;
+            else scr.value += val;
+        }
+        function clearCalc() { document.getElementById("calcDisplay").value = "0"; }
+        function solveCalc() {
+            const scr = document.getElementById("calcDisplay");
+            try { scr.value = eval(scr.value); } catch(e) { scr.value = "Error"; }
+        }
+    </script>
+</body>
+</html>
