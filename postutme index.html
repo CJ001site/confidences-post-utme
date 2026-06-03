@@ -45,6 +45,7 @@
         .btn { padding: 10px 22px; border: 1px solid transparent; border-radius: 4px; font-weight: 600; cursor: pointer; }
         .btn-prev { background: #cbd5e1; color: #334155; }
         .btn-next { background: #002060; color: white; }
+        .btn-submit { background: #d32f2f; color: white; }
 
         /* POPUP FLOATING CALCULATOR */
         .calc-popup { position: absolute; top: 20px; right: 20px; background: #333; padding: 15px; border-radius: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); display: none; width: 220px; z-index: 500; }
@@ -122,8 +123,11 @@
             </div>
 
             <div class="action-buttons">
-                <button class="btn btn-prev" onclick="changeQuestion(-1)">Previous Question</button>
-                <button class="btn btn-next" onclick="changeQuestion(1)">Next Question</button>
+                <div>
+                    <button class="btn btn-prev" onclick="changeQuestion(-1)">Previous</button>
+                    <button class="btn btn-next" onclick="changeQuestion(1)">Next</button>
+                </div>
+                <button class="btn btn-submit" onclick="submitExamToManager()">Submit Exam</button>
             </div>
         </main>
     </div>
@@ -272,7 +276,7 @@
                 { subject: "Agriculture", year: 2025, question: "The economic law explaining that output drops as input additions cross boundaries is:", options: ["A. Law of Demand", "B. Law of Diminishing Returns", "C. Law of Supply", "D. Law of Scale Economies"], correct: 1 },
                 { subject: "Agriculture", year: 2024, question: "The process of removing excess water away from soils to enable healthy respiration is:", options: ["A. Irrigation", "B. Drainage", "C. Leaching", "D. Mulching"], correct: 1 },
                 { subject: "Agriculture", year: 2023, question: "Which type of land tenure system involves ownership inherited down ancestral structural lineages?", options: ["A. Leasehold", "B. Communal Tenure", "C. Freehold", "D. Tenant-at-will"], correct: 1 },
-                { subject: "Agriculture", year: 2022, question: "The structural process of removing the top layer of horns from cattle early in life is:", options: ["A. Castration", "B. Dehorning/Dehorning", "C. Branding", "D. Docking"], correct: 1 },
+                { subject: "Agriculture", year: 2022, question: "The structural process of removing the top layer of horns from cattle early in life is:", options: ["A. Castration", "B. Dehorning", "C. Branding", "D. Docking"], correct: 1 },
                 { subject: "Agriculture", year: 2021, question: "Which soil classification exhibits the highest nutrient retention capabilities?", options: ["A. Sandy soil", "B. Clay soil", "C. Silty soil", "D. Gravel"], correct: 1 },
                 { subject: "Agriculture", year: 2019, question: "A primary macronutrient required heavily to support structural leafy plant foliage development is:", options: ["A. Iron", "B. Nitrogen", "C. Zinc", "D. Boron"], correct: 1 },
                 { subject: "Agriculture", year: 2017, question: "The systematic incubation period required to hatch a standard chicken egg successfully is:", options: ["A. 14 days", "B. 21 days", "C. 30 days", "D. 42 days"], correct: 1 },
@@ -293,7 +297,7 @@
                 { subject: "Biology", year: 2014, question: "Which hormone tracks, balances, and downregulates excess glucose levels within blood streams?", options: ["A. Adrenaline", "B. Insulin", "C. Thyroxine", "D. Auxin"], correct: 1 },
                 { subject: "Biology", year: 2013, question: "The functional kidney filtering component unit tasked to clean structural blood margins is:", options: ["A. Neuron", "B. Nephron", "C. Alveolus", "D. Ureter"], correct: 1 },
                 { subject: "Biology", year: 2012, question: "Which of the following organisms exhibits basic structural cellular properties without a defined nucleus?", options: ["A. Amoeba", "B. Bacteria", "C. Euglena", "D. Paramecium"], correct: 1 },
-                { subject: "Biology", year: 2011, question: "The genetic cross property profile showing full matching color visibility is called:", options: ["A. Dominance", "B. Codominance / Incomplete Dominance", "C. Recessiveness", "D. Mutation"], correct: 1 },
+                { subject: "Biology", year: 2011, question: "The genetic cross property profile showing full matching color visibility is called:", options: ["A. Dominance", "B. Codominance", "C. Recessiveness", "D. Mutation"], correct: 1 },
                 { subject: "Biology", year: 2010, question: "The functional movement of fluid margins across semi-permeable sheets is classified as:", options: ["A. Diffusion", "B. Osmosis", "C. Plasmolysis", "D. Transpiration"], correct: 1 },
 
                 // Chemistry Section (12 Questions Shared)
@@ -312,30 +316,30 @@
             ]
         };
 
-        // APPLICATION CORE LOGIC APP VARIABLES
+        // GLOBAL CONFIGURATION SYSTEM ENGINE VARIABLES
+        let selectedCourseKey = "";
         let currentCourse = [];
         let currentQuestionIndex = 0;
         let selectedAnswers = {}; 
-        let timerInstance;
-        let totalSecondsLeft = 30 * 60; // 30 Minutes
+        let countdownInterval;
+        let timeRemaining = 30 * 60; 
 
         function startExamEngine() {
             const nameField = document.getElementById("candidateName").value.trim();
-            const selectedCourseKey = document.getElementById("courseSelect").value;
+            selectedCourseKey = document.getElementById("courseSelect").value;
 
-            if (!nameField) { alert("Please input your full candidate name."); return; }
-            if (!selectedCourseKey) { alert("Please pick a target screening course."); return; }
+            if (!nameField || !selectedCourseKey) {
+                alert("Please fill in your name and select your target course configuration to proceed.");
+                return;
+            }
 
-            // Assign Questions dynamically based on selection
             currentCourse = questionBank[selectedCourseKey];
             currentQuestionIndex = 0;
             selectedAnswers = {};
-
-            // Adjust interface updates
+            
             document.getElementById("gatewayModal").style.display = "none";
-            document.getElementById("portalSubHeader").innerText = `CBT DESK: ${nameField.toUpperCase()} — ${document.getElementById("courseSelect").options[document.getElementById("courseSelect").selectedIndex].text}`;
+            document.getElementById("portalSubHeader").innerText = `CBT SCREENING WORKSPACE: ${nameField.toUpperCase()}`;
 
-            // Initialize views
             buildSubjectTabs(selectedCourseKey);
             renderNavigationDock();
             renderQuestion();
@@ -345,14 +349,13 @@
         function buildSubjectTabs(courseKey) {
             const tabsContainer = document.getElementById("subjectTabsContainer");
             tabsContainer.innerHTML = "";
-            
             let uniqueSubjects = [];
+            
             currentCourse.forEach(q => { if(!uniqueSubjects.includes(q.subject)) uniqueSubjects.push(q.subject); });
 
             uniqueSubjects.forEach((sub, i) => {
                 const button = document.createElement("button");
                 button.className = `tab-btn ${i === 0 ? 'active' : ''}`;
-                button.id = `tab-${sub}`;
                 button.innerText = sub;
                 button.onclick = () => jumpToSubjectSection(sub);
                 tabsContainer.appendChild(button);
@@ -360,39 +363,41 @@
         }
 
         function jumpToSubjectSection(subjectName) {
-            const index = currentCourse.findIndex(q => q.subject === subjectName);
-            if(index !== -1) {
-                currentQuestionIndex = index;
+            const targetIdx = currentCourse.findIndex(q => q.subject === subjectName);
+            if (targetIdx !== -1) {
+                currentQuestionIndex = targetIdx;
                 renderQuestion();
+                updateActiveTabState();
             }
+        }
+
+        function updateActiveTabState() {
+            const currentSubject = currentCourse[currentQuestionIndex].subject;
+            const tabs = document.querySelectorAll(".tab-btn");
+            tabs.forEach(btn => {
+                if(btn.innerText === currentSubject) btn.classList.add("active");
+                else btn.classList.remove("active");
+            });
         }
 
         function renderQuestion() {
             const currentQ = currentCourse[currentQuestionIndex];
-            
-            // Switch tabs highlighting framework
-            document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
-            const currentActiveTab = document.getElementById(`tab-${currentQ.subject}`);
-            if(currentActiveTab) currentActiveTab.classList.add("active");
-
-            // Meta updates
-            document.getElementById("questionMetaInfo").innerText = `${currentQ.subject.toUpperCase()} — UNIPORT PAST QUESTION [${currentQ.year}] (Question ${currentQuestionIndex + 1} of 50)`;
+            document.getElementById("questionMetaInfo").innerText = `${currentQ.subject.toUpperCase()} SECTION — YEAR ${currentQ.year} — QUESTION ${currentQuestionIndex + 1} OF ${currentCourse.length}`;
             document.getElementById("questionDisplayFrame").innerHTML = currentQ.question;
 
-            // Options population
             const optionsGroup = document.getElementById("optionsDisplayFrame");
             optionsGroup.innerHTML = "";
 
             currentQ.options.forEach((opt, idx) => {
                 const label = document.createElement("label");
                 label.className = "option-item";
-                
+
                 const radio = document.createElement("input");
                 radio.type = "radio";
                 radio.name = "cbt-opt";
                 radio.value = idx;
                 if(selectedAnswers[currentQuestionIndex] === idx) radio.checked = true;
-                
+
                 radio.onchange = () => {
                     selectedAnswers[currentQuestionIndex] = idx;
                     updateNavigationDockStatus();
@@ -403,11 +408,20 @@
                 optionsGroup.appendChild(label);
             });
 
-            // Refresh highlights on numbers
-            document.querySelectorAll(".nav-btn").forEach((btn, i) => {
-                btn.classList.remove("active");
-                if(i === currentQuestionIndex) btn.classList.add("active");
-            });
+            updateActiveDockHighlight();
+            updateActiveTabState();
+        }
+
+        function changeQuestion(direction) {
+            const newIndex = currentQuestionIndex + direction;
+            if (newIndex >= 0 && newIndex < currentCourse.length) {
+                currentQuestionIndex = newIndex;
+                renderQuestion();
+            } else if (newIndex >= currentCourse.length) {
+                if (confirm("You have reached the final question. Would you like to submit your exam screening records?")) {
+                    submitExamToManager();
+                }
+            }
         }
 
         function renderNavigationDock() {
@@ -415,58 +429,113 @@
             dock.innerHTML = "";
             currentCourse.forEach((_, idx) => {
                 const btn = document.createElement("button");
-                btn.className = `nav-btn ${idx === 0 ? 'active' : ''}`;
-                btn.id = `navbtn-${idx}`;
+                btn.className = "nav-btn";
                 btn.innerText = idx + 1;
-                btn.onclick = () => { currentQuestionIndex = idx; renderQuestion(); };
+                btn.onclick = () => {
+                    currentQuestionIndex = idx;
+                    renderQuestion();
+                };
                 dock.appendChild(btn);
             });
         }
 
         function updateNavigationDockStatus() {
-            if(selectedAnswers[currentQuestionIndex] !== undefined) {
-                document.getElementById(`navbtn-${currentQuestionIndex}`).classList.add("answered");
-            }
+            const buttons = document.querySelectorAll(".nav-btn");
+            Object.keys(selectedAnswers).forEach(key => {
+                buttons[key].classList.add("answered");
+            });
         }
 
-        function changeQuestion(direction) {
-            let tentativeIndex = currentQuestionIndex + direction;
-            if (tentativeIndex >= 0 && tentativeIndex < currentCourse.length) {
-                currentQuestionIndex = tentativeIndex;
-                renderQuestion();
-            }
+        function updateActiveDockHighlight() {
+            const buttons = document.querySelectorAll(".nav-btn");
+            buttons.forEach((btn, idx) => {
+                if(idx === currentQuestionIndex) btn.classList.add("active");
+                else btn.classList.remove("active");
+            });
         }
 
         function startCountdownTimer() {
-            clearInterval(timerInstance);
-            timerInstance = setInterval(() => {
-                if(totalSecondsLeft <= 0) {
-                    clearInterval(timerInstance);
-                    alert("Time up! Your examination screening has been submitted automatically.");
-                    location.reload();
-                } else {
-                    totalSecondsLeft--;
-                    let mins = Math.floor(totalSecondsLeft / 60);
-                    let secs = totalSecondsLeft % 60;
-                    document.getElementById("timer").innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            clearInterval(countdownInterval);
+            countdownInterval = setInterval(() => {
+                timeRemaining--;
+                let mins = Math.floor(timeRemaining / 60);
+                let secs = timeRemaining % 60;
+                document.getElementById("timer").innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+                if (timeRemaining <= 0) {
+                    clearInterval(countdownInterval);
+                    alert("Time expired! Your exam script will submit automatically.");
+                    submitExamToManager();
                 }
             }, 1000);
         }
 
-        // TOOL FUNCTIONS: STANDARD POPUP CALCULATOR HOOKS
         function toggleCalculator() {
-            const box = document.getElementById("calcPopup");
-            box.style.display = (box.style.display === "block") ? "none" : "block";
+            const calc = document.getElementById("calcPopup");
+            calc.style.display = calc.style.display === "block" ? "none" : "block";
         }
-        function inputCalc(val) {
-            const scr = document.getElementById("calcDisplay");
-            if(scr.value === "0") scr.value = val;
-            else scr.value += val;
-        }
-        function clearCalc() { document.getElementById("calcDisplay").value = "0"; }
+        function inputCalc(val) { document.getElementById("calcDisplay").value += val; }
+        function clearCalc() { document.getElementById("calcDisplay").value = ""; }
         function solveCalc() {
-            const scr = document.getElementById("calcDisplay");
-            try { scr.value = eval(scr.value); } catch(e) { scr.value = "Error"; }
+            try { document.getElementById("calcDisplay").value = eval(document.getElementById("calcDisplay").value); }
+            catch { document.getElementById("calcDisplay").value = "Error"; }
+        }
+
+        // GOOGLE SHEET SYNC SYSTEM SUBMISSION LOGIC WITH YOUR LIVE MACRO URL CONNECTED
+        function submitExamToManager() {
+            clearInterval(countdownInterval);
+            
+            // Calculate scores per subject dynamically
+            let breakdown = {};
+            currentCourse.forEach((q, idx) => {
+                if (!breakdown[q.subject]) breakdown[q.subject] = { total: 0, correct: 0 };
+                breakdown[q.subject].total++;
+                if (selectedAnswers[idx] === q.correct) breakdown[q.subject].correct++;
+            });
+
+            // Format scores out of 100% per subject structure
+            let scoresData = {};
+            Object.keys(breakdown).forEach(sub => {
+                scoresData[sub] = Math.round((breakdown[sub].correct / breakdown[sub].total) * 100);
+            });
+
+            const candidateName = document.getElementById("candidateName").value.trim();
+            const courseSelect = document.getElementById("courseSelect");
+            const courseText = courseSelect.options[courseSelect.selectedIndex].text;
+
+            const payload = {
+                name: candidateName,
+                course: courseText,
+                english: scoresData["English"] || 0,
+                math: scoresData["Mathematics"] || 0,
+                physics: scoresData["Physics"] || 0,
+                chemistry: scoresData["Chemistry"] || 0,
+                literature: scoresData["Literature"] || 0,
+                government: scoresData["Government"] || 0,
+                crs: scoresData["CRS"] || 0,
+                agriculture: scoresData["Agriculture"] || 0,
+                biology: scoresData["Biology"] || 0
+            };
+
+            // YOUR LIVE WEB APP MACRO URL EMBEDDED SAFELY BELOW:
+            const targetSheetUrl = "https://script.google.com/macros/s/AKfycbzuHf-mZCDvsH2s4Jb0yPpNekq4f16CAC9mkQvOaQAprnbYThFiNfepKJj0hPGCgHOO/exec";
+
+            alert("Submitting results to screening system database. Please wait...");
+
+            fetch(targetSheetUrl, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            })
+            .then(() => {
+                alert(`Screening complete, ${candidateName}! Your scores have been logged successfully into the administrative Google Sheet.`);
+                location.reload();
+            })
+            .catch(err => {
+                console.error(err);
+                alert("Network communication error. Unable to synchronize sheet rows data.");
+            });
         }
     </script>
 </body>
